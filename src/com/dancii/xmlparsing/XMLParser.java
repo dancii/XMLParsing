@@ -7,7 +7,9 @@ import android.util.Xml;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -20,8 +22,8 @@ public class XMLParser {
 
     private static final String ns=null;
     private static final String filename="currencies";
-    FileOutputStream outputStream=null;
-    Context context =null;
+    private FileWriter fileWriter=null;
+    private static Context context =null;
 
     public XMLParser(Context context){
         this.context=context;
@@ -97,9 +99,9 @@ public class XMLParser {
     }
     public void save(String data){
         try {
-            outputStream = context.openFileOutput(filename, context.MODE_PRIVATE);
-            outputStream.write(data.getBytes());
-            outputStream.close();
+        	fileWriter = new FileWriter(new File(context.getFilesDir(),filename));
+        	fileWriter.write(data);
+            fileWriter.close();
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
