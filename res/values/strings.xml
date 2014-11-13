@@ -4,5 +4,9 @@
     <string name="app_name">XMLParsing</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="fromCurr">From:</string>
+    <string name="toCurr">To:</string>
+    <string name="rateCalc">Calculate</string>
+    <string name="editTxtHint">Value</string>
 
 </resources>

@@ -10,34 +10,60 @@
     tools:context="com.dancii.xmlparsing.MainActivity" >
 
     <TextView
-        android:id="@+id/textView1"
+        android:id="@+id/txtViewFromCurr"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:text="@string/fromCurr" />
 
     <Spinner
         android:id="@+id/currencySpinnerOne"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView1"
-        android:layout_below="@+id/textView1"
-        android:layout_marginTop="49dp" />
+        android:layout_alignLeft="@+id/txtViewFromCurr"
+        android:layout_below="@+id/txtViewFromCurr"
+        android:layout_marginTop="74dp" />
 
     <Spinner
         android:id="@+id/currencySpinnerTwo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/currencySpinnerOne"
-        android:layout_below="@+id/currencySpinnerOne"
-        android:layout_marginTop="17dp" />
+        android:layout_alignTop="@+id/currencySpinnerOne"
+        android:layout_toRightOf="@+id/btnGetData" />
+
+    <TextView
+        android:id="@+id/txtViewToCurr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/currencySpinnerOne"
+        android:layout_alignLeft="@+id/currencySpinnerTwo"
+        android:text="@string/toCurr" />
+
+    <TextView
+        android:id="@+id/txtViewToCurrValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/currencySpinnerTwo"
+        android:layout_alignLeft="@+id/currencySpinnerTwo"
+        android:layout_marginBottom="27dp" />
 
     <Button
         android:id="@+id/btnGetData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/currencySpinnerTwo"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="36dp"
-        android:text="Button" />
+        android:layout_centerVertical="true"
+        android:onClick="getData"
+        android:text="@string/rateCalc" />
+
+    <EditText
+        android:id="@+id/editTxtFromCurrValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/txtViewToCurrValue"
+        android:layout_alignBottom="@+id/txtViewToCurrValue"
+        android:layout_toLeftOf="@+id/btnGetData"
+        android:ems="10"
+        android:hint="@string/editTxtHint"
+        android:inputType="number" />
 
 </RelativeLayout>

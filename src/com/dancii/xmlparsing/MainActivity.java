@@ -9,7 +9,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -37,43 +39,48 @@ public class MainActivity extends Activity {
     private StringBuffer storedString = new StringBuffer();
     private Date date=new Date();
     private String formatDate = new SimpleDateFormat("yyyy-MM-dd").format(date);
+    private TextView txtViewFromCurr, txtViewToCurr, txtViewCurrValue;
+    private Button button;
+    private EditText editTextCurr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button button = (Button) findViewById(R.id.btnGetData);
+        
+        button = (Button) findViewById(R.id.btnGetData);
+        spinnerOne = (Spinner) findViewById(R.id.currencySpinnerOne);
+        spinnerTwo = (Spinner) findViewById(R.id.currencySpinnerTwo);
+        txtViewFromCurr = (TextView) findViewById(R.id.txtViewFromCurr);
+        txtViewToCurr = (TextView) findViewById(R.id.txtViewToCurr);
+        editTextCurr = (EditText) findViewById(R.id.editTxtFromCurrValue);
+        txtViewCurrValue = (TextView) findViewById(R.id.txtViewToCurrValue);
+        
         loadPage();
+        
     }
 
     public void getData(View view){
-        String[] testArray=null;
-        try{
-            inputStream=openFileInput("currencies");
-            InputStreamReader streamReader = new InputStreamReader(inputStream);
-            String strLine = null;
-            BufferedReader bufferedReader=new BufferedReader(streamReader);
-            if ((strLine = bufferedReader.readLine()) != null) {
-                storedString.append(strLine);
-                //System.out.println(strLine.split(",")[0]);
-                //System.out.println(strLine.split(",")[1]);
-                testArray=strLine.split(",");
-
-            }
-            for(int i=0;i<testArray.length;i++){
-                System.out.println(testArray[i]);
-            }
-
-            //System.out.println(storedString+","+formatDate);
-
-            storedString = new StringBuffer();
-            bufferedReader.close();
-            streamReader.close();
-            inputStream.close();
-        }catch(Exception e){
-            System.out.println("Error: "+e);
+    	double value=0;
+    	double fromCurrentCurrToEUR=0;
+    	double fromEURToSelectedCurr=0;
+    	
+        txtViewFromCurr.setText(String.valueOf(spinnerOne.getSelectedItem()));
+        txtViewToCurr.setText(String.valueOf(spinnerTwo.getSelectedItem()));
+        
+        
+        if(editTextCurr.getText().toString().equals("")){
+        	Toast.makeText(this, "You need to write a value to calculate", Toast.LENGTH_SHORT).show();
+        }else{
+        	value=Double.parseDouble(editTextCurr.getText().toString());
+        	fromCurrentCurrToEUR=value/rateDouble.get(spinnerOne.getSelectedItemPosition());
+        	fromEURToSelectedCurr=fromCurrentCurrToEUR*rateDouble.get(spinnerTwo.getSelectedItemPosition());
+        	
+        	txtViewCurrValue.setText(String.valueOf(fromEURToSelectedCurr));
+        	
         }
-
+        
+        
     }
 
 
@@ -137,8 +144,6 @@ public class MainActivity extends Activity {
 
             xmlParser.parse(stream);
 
-
-
             /*
                 Get data from file, extract and push into spinners
             */
@@ -152,7 +157,11 @@ public class MainActivity extends Activity {
                     storedString.append(strLine);
                     tempArray=strLine.split(",");
                 }
-
+                
+                
+                currencyStr.add("EUR");
+                rateDouble.add(1.0);
+                
                 for(int i=0;i<tempArray.length;i++){
                     isDouble(tempArray[i]);
                 }
@@ -182,24 +191,18 @@ public class MainActivity extends Activity {
 				public void run() {
 					// TODO Auto-generated method stub
 					try{
-		            	spinnerOne = (Spinner) findViewById(R.id.currencySpinnerOne);
-		                spinnerTwo = (Spinner) findViewById(R.id.currencySpinnerTwo);
+		            	
 		                ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_spinner_item, currencyStr);
 		                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		                spinnerOne.setAdapter(adapter);
 		                spinnerTwo.setAdapter(adapter);
 		                spinnerOne.setOnItemSelectedListener(new SpinnerListener());
+		                spinnerTwo.setOnItemSelectedListener(new SpinnerListener());
 		            }catch(Exception e){
 		            	System.out.println("SPINNER ERROR: "+e);
 		            }
 				}
 			});
-            
-            
-            
-
-
-
 
         }catch(Exception e){
             System.out.println("HTTP URL ERROR: "+e);
