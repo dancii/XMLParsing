@@ -1,6 +1,7 @@
 package com.dancii.xmlparsing;
 
 import android.content.Context;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.util.Xml;
 
@@ -12,43 +13,47 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by dancii on 14-11-10.
  */
 public class XMLParser {
 
-    private static final String ns=null;
-    private static final String filename="currencies";
-    private FileWriter fileWriter=null;
-    private static Context context =null;
+    private static final String filename = "currencies";
+    private FileWriter fileWriter= null;
+    private static Context context = null;
+    private String dateNow = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(new Date());
 
     public XMLParser(Context context){
         this.context=context;
     }
 
-    public List parse(InputStream in) throws XmlPullParserException, IOException{
+    public void parse(InputStream in) throws XmlPullParserException, IOException{
         try{
 
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
             parser.nextTag();
-            return readFeed(parser);
+            readFeed(parser);
         }finally{
             in.close();
         }
     }
 
-    private ArrayList<Currency> readFeed(XmlPullParser parser)throws XmlPullParserException, IOException{
-
-        ArrayList<Currency> currencies = new ArrayList<Currency>();
-        Currency currencyObj=null;
+    private void readFeed(XmlPullParser parser)throws XmlPullParserException, IOException{
+    	
         String currency=null;
         String rate=null;
         String txtSaveStr="";
+        
+        
 
         while(parser.next() != XmlPullParser.END_DOCUMENT){
             if(parser.getEventType() != XmlPullParser.START_TAG){
@@ -63,21 +68,14 @@ public class XMLParser {
                     currency=parser.getAttributeValue(null, "currency");
                     rate=parser.getAttributeValue(null, "rate");
                     txtSaveStr+=currency+","+rate+",";
-
-                    try{
-                        currencyObj=new Currency(currency,Double.parseDouble(rate));
-                        currencies.add(currencyObj);
-                    }catch(Exception e){
-                        System.out.println("ERROR: "+e);
-                    }
                 }
 
             }else{
                 skip(parser);
             }
         }
+        txtSaveStr+=dateNow;
         save(txtSaveStr);
-        return currencies;
     }
 
     private void skip(XmlPullParser parser) throws XmlPullParserException, IOException{

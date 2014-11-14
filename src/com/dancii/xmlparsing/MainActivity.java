@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,6 +28,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,14 +38,12 @@ public class MainActivity extends Activity {
 
 
     private static final String url="http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-    private List<Currency> currencies=null;
-    private ArrayList<String> currencyStr=new ArrayList<String>();;
+    private ArrayList<String> currencyStr=new ArrayList<String>();
     private ArrayList<Double> rateDouble=null;
     private Spinner spinnerOne,spinnerTwo;
     private InputStream inputStream=null;
     private StringBuffer storedString = new StringBuffer();
-    private Date date=new Date();
-    private String formatDate = new SimpleDateFormat("yyyy-MM-dd").format(date);
+    private String formatDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     private TextView txtViewFromCurr, txtViewToCurr, txtViewCurrValue;
     private Button button;
     private EditText editTextCurr;
@@ -62,6 +63,31 @@ public class MainActivity extends Activity {
         
         loadPage();
         
+    }
+    
+    @Override
+    protected void onStart(){
+    	super.onStart();
+    	String[] tempArray=null;
+    	Date dateNow=new Date();
+    	Date dateFromFile=null;
+    	
+    	tempArray=readFromFile();
+    	
+    	try {
+			dateFromFile=new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse(tempArray[tempArray.length-1]);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			Log.e("ERROR DATE", e.toString());
+		}
+    	
+    	long diffInMilli=dateNow.getTime()-dateFromFile.getTime();
+    	
+    	if(diffInMilli>=86400000/*24h in millisec*/){
+    		loadPage();
+    	}else{
+    		Log.d("OUTPUT","Not yet!!");
+    	}
     }
 
     public void getData(View view){
@@ -83,8 +109,7 @@ public class MainActivity extends Activity {
         	txtViewCurrValue.setText(String.valueOf(fromEURToSelectedCurr));
         	
         }
-        
-        
+
     }
 
 
@@ -125,62 +150,70 @@ public class MainActivity extends Activity {
                 return null;
             }
         }
+        
+        @Override
+        protected void onPostExecute(Void v) {
+        	
+        /******
+            Get data from file, extract and push into spinners
+    	******/
+        	getCurrencyFromSavedFile();
+        }
+    }
+    
+    private String[] readFromFile(){
+    	String[] arrayFromFile=null;
+        
+    	try{
+            inputStream=openFileInput("currencies");
+            InputStreamReader streamReader = new InputStreamReader(inputStream);
+            String strLine = null;
+            BufferedReader bufferedReader=new BufferedReader(streamReader);
+            if ((strLine = bufferedReader.readLine()) != null) {
+                storedString.append(strLine);
+                arrayFromFile=strLine.split(",");
+            }
+            
+
+            storedString = new StringBuffer();
+            bufferedReader.close();
+            streamReader.close();
+            inputStream.close();
+        }catch(FileNotFoundException e1){
+        	Toast.makeText(this, "It seems that you dont have a saved file, try again later", Toast.LENGTH_SHORT).show();
+        }catch(Exception e2){
+        	Toast.makeText(this, "Some problem with reading from the file, try again later", Toast.LENGTH_SHORT).show();
+        }
+		return arrayFromFile;
     }
     
     private void getCurrencyFromSavedFile(){
     	currencyStr=new ArrayList<String>();
         rateDouble=new ArrayList<Double>();
         String[] tempArray=null;
-        File file = new File("currencies");
-        //if(file.exists()){
-        	try{
-                inputStream=openFileInput("currencies");
-                InputStreamReader streamReader = new InputStreamReader(inputStream);
-                String strLine = null;
-                BufferedReader bufferedReader=new BufferedReader(streamReader);
-                if ((strLine = bufferedReader.readLine()) != null) {
-                    storedString.append(strLine);
-                    tempArray=strLine.split(",");
-                }
-                
-                
-                currencyStr.add("EUR");
-                rateDouble.add(1.0);
-                
-                for(int i=0;i<tempArray.length;i++){
-                    isDouble(tempArray[i]);
-                }
+        
+        tempArray=readFromFile();
+        currencyStr.add("EUR");
+        rateDouble.add(1.0);
+        
+        for(int i=0;i<tempArray.length-1;i++){
+            isDouble(tempArray[i]);
+        }
 
-                //System.out.println(storedString+","+formatDate);
-
-                storedString = new StringBuffer();
-                bufferedReader.close();
-                streamReader.close();
-                inputStream.close();
-            }catch(FileNotFoundException e1){
-            	Toast.makeText(this, "It seems that you dont have a saved file, try again later", Toast.LENGTH_SHORT).show();
-            }catch(Exception e2){
-            	Toast.makeText(this, "Some problem with reading from the file, try again later", Toast.LENGTH_SHORT).show();
-            }
-    		
+        //System.out.println(storedString+","+formatDate);
+		
+    	
+		try{
         	
-    		try{
-            	
-                ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_spinner_item, currencyStr);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spinnerOne.setAdapter(adapter);
-                spinnerTwo.setAdapter(adapter);
-                spinnerOne.setOnItemSelectedListener(new SpinnerListener());
-                spinnerTwo.setOnItemSelectedListener(new SpinnerListener());
-            }catch(Exception e){
-            	System.out.println("SPINNER ERROR: "+e);
-            }
-        //}else{
-        	//
-        //}
-    	
-    	
-    	
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_spinner_item, currencyStr);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerOne.setAdapter(adapter);
+            spinnerTwo.setAdapter(adapter);
+            spinnerOne.setOnItemSelectedListener(new SpinnerListener());
+            spinnerTwo.setOnItemSelectedListener(new SpinnerListener());
+        }catch(Exception e){
+        	System.out.println("SPINNER ERROR: "+e);
+        }
     }
 
     private void loadXmlFromNetwork(String urlString) throws XmlPullParserException, IOException{
@@ -204,65 +237,8 @@ public class MainActivity extends Activity {
 
             xmlParser.parse(stream);
 
-            /*
-                Get data from file, extract and push into spinners
-            */
-
-            try{
-                inputStream=openFileInput("currencies");
-                InputStreamReader streamReader = new InputStreamReader(inputStream);
-                String strLine = null;
-                BufferedReader bufferedReader=new BufferedReader(streamReader);
-                if ((strLine = bufferedReader.readLine()) != null) {
-                    storedString.append(strLine);
-                    tempArray=strLine.split(",");
-                }
-                
-                
-                currencyStr.add("EUR");
-                rateDouble.add(1.0);
-                
-                for(int i=0;i<tempArray.length;i++){
-                    isDouble(tempArray[i]);
-                }
-
-                //System.out.println(storedString+","+formatDate);
-
-                storedString = new StringBuffer();
-                bufferedReader.close();
-                streamReader.close();
-                inputStream.close();
-            }catch(Exception e){
-                System.out.println("Error: "+e);
-            }
-
-            for(String currency : currencyStr){
-                System.out.println(currency);
-            }
-
-            for(Double rate : rateDouble){
-                System.out.println(rate);
-            }
-
             
-            runOnUiThread(new Runnable() {
-				
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					try{
-		            	
-		                ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_spinner_item, currencyStr);
-		                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-		                spinnerOne.setAdapter(adapter);
-		                spinnerTwo.setAdapter(adapter);
-		                spinnerOne.setOnItemSelectedListener(new SpinnerListener());
-		                spinnerTwo.setOnItemSelectedListener(new SpinnerListener());
-		            }catch(Exception e){
-		            	System.out.println("SPINNER ERROR: "+e);
-		            }
-				}
-			});
+            
 
         }catch(Exception e){
         	
@@ -311,8 +287,6 @@ public class MainActivity extends Activity {
 }
 
 class SpinnerListener implements AdapterView.OnItemSelectedListener{
-
-
 
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id){
         Toast.makeText(parent.getContext(), parent.getItemAtPosition(pos).toString()+" selected",Toast.LENGTH_SHORT).show();
