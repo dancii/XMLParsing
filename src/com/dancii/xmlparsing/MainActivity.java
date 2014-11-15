@@ -2,14 +2,22 @@ package com.dancii.xmlparsing;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -33,20 +41,27 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 public class MainActivity extends Activity {
 
 
     private static final String url="http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
+    private static final String STATE_TEXTVIEW_CURR_CALC = "txtViewCurrCalc";
+    private static final String STATE_SPINNER_COLOR = "spinnerColor";
     private ArrayList<String> currencyStr=new ArrayList<String>();
     private ArrayList<Double> rateDouble=null;
     private Spinner spinnerOne,spinnerTwo;
     private InputStream inputStream=null;
     private StringBuffer storedString = new StringBuffer();
-    private String formatDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     private TextView txtViewFromCurr, txtViewToCurr, txtViewCurrValue;
     private Button button;
     private EditText editTextCurr;
+    private AsyncTask<String, Void, Void> downloadXMLTask=null;
+    private SharedPreferences myPreferences;
+    Random rand=new Random();
+    String[] tempArray=null;
+    private int[] backgroundColors=null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,14 +76,41 @@ public class MainActivity extends Activity {
         editTextCurr = (EditText) findViewById(R.id.editTxtFromCurrValue);
         txtViewCurrValue = (TextView) findViewById(R.id.txtViewToCurrValue);
         
-        loadPage();
+        myPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         
+        if(savedInstanceState != null){
+        	txtViewCurrValue.setText(savedInstanceState.getString(STATE_TEXTVIEW_CURR_CALC));
+        	backgroundColors=savedInstanceState.getIntArray(STATE_SPINNER_COLOR);
+        	getCurrencyFromSavedFile();
+
+        }else{
+        	loadPage();
+        }
+           
+    }
+    
+    //Code taken from http://developer.android.com/training/basics/activity-lifecycle/recreating.html
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState){
+    	savedInstanceState.putString(STATE_TEXTVIEW_CURR_CALC, txtViewCurrValue.getText().toString());
+    	
+    	savedInstanceState.putIntArray(STATE_SPINNER_COLOR, backgroundColors);
+    	super.onSaveInstanceState(savedInstanceState);
+    }
+    
+    @Override
+    public void onPause(){
+    	super.onPause();
+    	
+    	if(downloadXMLTask!=null){
+    		downloadXMLTask.cancel(true);
+    	}
     }
     
     @Override
     protected void onStart(){
     	super.onStart();
-    	String[] tempArray=null;
+    	tempArray=null;
     	Date dateNow=new Date();
     	Date dateFromFile=null;
     	
@@ -79,11 +121,13 @@ public class MainActivity extends Activity {
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			Log.e("ERROR DATE", e.toString());
+		}catch(Exception e){
+			loadPage();
 		}
     	
     	long diffInMilli=dateNow.getTime()-dateFromFile.getTime();
     	
-    	if(diffInMilli>=86400000/*24h in millisec*/){
+    	if(diffInMilli>=Integer.parseInt(myPreferences.getString("prefUpdateInter", "1"))*24*60*60*1000/*In milliseconds*/){
     		loadPage();
     	}else{
     		Log.d("OUTPUT","Not yet!!");
@@ -91,24 +135,26 @@ public class MainActivity extends Activity {
     }
 
     public void getData(View view){
-    	double value=0;
-    	double fromCurrentCurrToEUR=0;
-    	double fromEURToSelectedCurr=0;
-    	
-        txtViewFromCurr.setText(String.valueOf(spinnerOne.getSelectedItem()));
-        txtViewToCurr.setText(String.valueOf(spinnerTwo.getSelectedItem()));
-        
-        
-        if(editTextCurr.getText().toString().equals("")){
-        	Toast.makeText(this, "You need to write a value to calculate", Toast.LENGTH_SHORT).show();
-        }else{
-        	value=Double.parseDouble(editTextCurr.getText().toString());
-        	fromCurrentCurrToEUR=value/rateDouble.get(spinnerOne.getSelectedItemPosition());
-        	fromEURToSelectedCurr=fromCurrentCurrToEUR*rateDouble.get(spinnerTwo.getSelectedItemPosition());
+    	if(view.getId()!=R.id.btnGetData){
+    		
+    	}else{
+    		double value=0;
+        	double fromCurrentCurrToEUR=0;
+        	double fromEURToSelectedCurr=0;
         	
-        	txtViewCurrValue.setText(String.valueOf(fromEURToSelectedCurr));
-        	
-        }
+            
+            
+            if(editTextCurr.getText().toString().equals("")){
+            	Toast.makeText(this, "You need to write a value to calculate", Toast.LENGTH_SHORT).show();
+            }else{
+            	value=Double.parseDouble(editTextCurr.getText().toString());
+            	fromCurrentCurrToEUR=value/rateDouble.get(spinnerOne.getSelectedItemPosition());
+            	fromEURToSelectedCurr=fromCurrentCurrToEUR*rateDouble.get(spinnerTwo.getSelectedItemPosition());
+            	
+            	txtViewCurrValue.setText(String.valueOf(fromEURToSelectedCurr));
+            	
+            }
+    	}
 
     }
 
@@ -117,6 +163,7 @@ public class MainActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+        menu.add(0,0,0, "Settings");
         return true;
     }
 
@@ -125,18 +172,17 @@ public class MainActivity extends Activity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
+    	switch(item.getItemId()){
+		case 0:
+			Intent intent = new Intent(this,Settings.class);
+			startActivity(intent);
+			return true;
+		}
         return super.onOptionsItemSelected(item);
     }
 
     public void loadPage(){
-        new DownloadXmlTask().execute(url);
+    	downloadXMLTask= new DownloadXmlTask().execute(url);
     }
 
     private class DownloadXmlTask extends AsyncTask<String, Void, Void> {
@@ -174,7 +220,6 @@ public class MainActivity extends Activity {
                 arrayFromFile=strLine.split(",");
             }
             
-
             storedString = new StringBuffer();
             bufferedReader.close();
             streamReader.close();
@@ -190,30 +235,61 @@ public class MainActivity extends Activity {
     private void getCurrencyFromSavedFile(){
     	currencyStr=new ArrayList<String>();
         rateDouble=new ArrayList<Double>();
-        String[] tempArray=null;
+        tempArray=null;
         
         tempArray=readFromFile();
-        currencyStr.add("EUR");
-        rateDouble.add(1.0);
         
         for(int i=0;i<tempArray.length-1;i++){
             isDouble(tempArray[i]);
         }
+        
+        if(backgroundColors==null){
+        	backgroundColors=new int[currencyStr.size()];
+            for(int i=0;i<currencyStr.size();i++){
+            	backgroundColors[i]=Color.argb(255,rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
+            }
+        }
+        
 
-        //System.out.println(storedString+","+formatDate);
-		
-    	
+
 		try{
-        	
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_spinner_item, currencyStr);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spinnerOne.setAdapter(adapter);
-            spinnerTwo.setAdapter(adapter);
+
+            spinnerOne.setAdapter(new CustomAdapter(this,R.layout.custom_spinner,currencyStr));
+            spinnerTwo.setAdapter(new CustomAdapter(this,R.layout.custom_spinner,currencyStr));
             spinnerOne.setOnItemSelectedListener(new SpinnerListener());
             spinnerTwo.setOnItemSelectedListener(new SpinnerListener());
+            
         }catch(Exception e){
         	System.out.println("SPINNER ERROR: "+e);
         }
+    }
+    
+    public class CustomAdapter extends ArrayAdapter<String>{
+    	
+    	public CustomAdapter(Context context, int textViewResourceId, ArrayList<String> data){
+    		super(context, textViewResourceId, data);
+    	}
+    	
+    	@Override
+    	public View getDropDownView(int position, View convertView, ViewGroup parent){
+    		return getCustomView(position, convertView, parent);
+    	}
+    	
+    	@Override
+    	public View getView(int position, View convertView, ViewGroup parent){
+    		return getCustomView(position, convertView, parent);
+    	}
+    	
+    	public View getCustomView(int position, View convertView, ViewGroup parent){
+    		LayoutInflater inflater=getLayoutInflater();
+    		View row = inflater.inflate(R.layout.custom_spinner, parent, false);
+    		row.setBackgroundColor(backgroundColors[position]);
+    		
+    		TextView txtCurrency = (TextView) row.findViewById(R.id.txtViewCurrency);
+    		txtCurrency.setText(currencyStr.get(position));
+    		
+    		return row;
+    	}
     }
 
     private void loadXmlFromNetwork(String urlString) throws XmlPullParserException, IOException{
@@ -221,7 +297,7 @@ public class MainActivity extends Activity {
         XMLParser xmlParser=new XMLParser(this);
         currencyStr=new ArrayList<String>();
         rateDouble=new ArrayList<Double>();
-        String[] tempArray=null;
+        tempArray=null;
 
 
         try{
@@ -283,16 +359,22 @@ public class MainActivity extends Activity {
             currencyStr.add(str);
         }
     }
+    
+    private class SpinnerListener implements AdapterView.OnItemSelectedListener{
 
-}
+        public void onItemSelected(AdapterView<?> parent, View view, int pos, long id){
+            
+            if(parent==spinnerOne){
+            	txtViewFromCurr.setText(String.valueOf(spinnerOne.getSelectedItem()));
+            }else{
+            	txtViewToCurr.setText(String.valueOf(spinnerTwo.getSelectedItem()));
+            }
+            
+        }
 
-class SpinnerListener implements AdapterView.OnItemSelectedListener{
+        public void onNothingSelected(AdapterView<?> parent){
 
-    public void onItemSelected(AdapterView<?> parent, View view, int pos, long id){
-        Toast.makeText(parent.getContext(), parent.getItemAtPosition(pos).toString()+" selected",Toast.LENGTH_SHORT).show();
+        }
     }
 
-    public void onNothingSelected(AdapterView<?> parent){
-
-    }
 }

@@ -53,6 +53,8 @@ public class XMLParser {
         String rate=null;
         String txtSaveStr="";
         
+        txtSaveStr+="EUR,1.0,";
+        
         
 
         while(parser.next() != XmlPullParser.END_DOCUMENT){

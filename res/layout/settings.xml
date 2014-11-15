@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    
+    <PreferenceCategory android:title="@string/title_activity_settings">
+        <EditTextPreference
+                android:title="@string/UpdateCurrInter"
+                android:summary="Set your update interval(days)"
+                android:key="prefUpdateInter"
+                android:inputType="number"/>
+        
+    </PreferenceCategory>
+
+</PreferenceScreen>
