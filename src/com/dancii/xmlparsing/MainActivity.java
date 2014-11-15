@@ -83,8 +83,6 @@ public class MainActivity extends Activity {
         	backgroundColors=savedInstanceState.getIntArray(STATE_SPINNER_COLOR);
         	getCurrencyFromSavedFile();
 
-        }else{
-        	loadPage();
         }
            
     }
@@ -98,15 +96,30 @@ public class MainActivity extends Activity {
     	super.onSaveInstanceState(savedInstanceState);
     }
     
+    
+    //If activity is in the background, cancel the asynctask
     @Override
     public void onPause(){
     	super.onPause();
     	
     	if(downloadXMLTask!=null){
     		downloadXMLTask.cancel(true);
+    		downloadXMLTask=null;
     	}
     }
     
+    //If activity is resumed, load in the xml because it got interrupted or old version of xml
+    @Override
+    public void onResume(){
+    	super.onResume();
+    	
+    	if(downloadXMLTask==null){
+    		loadPage();
+    	}
+    	
+    }
+    
+    //Checks if the file is x hours older to update the xml file, else get it from the file
     @Override
     protected void onStart(){
     	super.onStart();
@@ -130,10 +143,10 @@ public class MainActivity extends Activity {
     	if(diffInMilli>=Integer.parseInt(myPreferences.getString("prefUpdateInter", "1"))*24*60*60*1000/*In milliseconds*/){
     		loadPage();
     	}else{
-    		Log.d("OUTPUT","Not yet!!");
+    		getCurrencyFromSavedFile();
     	}
     }
-
+    //Button method
     public void getData(View view){
     	if(view.getId()!=R.id.btnGetData){
     		
@@ -181,6 +194,7 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    //Starts the asynctask
     public void loadPage(){
     	downloadXMLTask= new DownloadXmlTask().execute(url);
     }
@@ -207,6 +221,7 @@ public class MainActivity extends Activity {
         }
     }
     
+    //Method to read from the file and return all the values like an array
     private String[] readFromFile(){
     	String[] arrayFromFile=null;
         
@@ -232,6 +247,7 @@ public class MainActivity extends Activity {
 		return arrayFromFile;
     }
     
+    //Splits the valus from the string array to two different arraylists and customspinners.
     private void getCurrencyFromSavedFile(){
     	currencyStr=new ArrayList<String>();
         rateDouble=new ArrayList<Double>();
@@ -292,6 +308,8 @@ public class MainActivity extends Activity {
     	}
     }
 
+    
+    //The asynctask calls this method, gets the xml from internet, if user dont have internet or the website is down then get from file if exists 
     private void loadXmlFromNetwork(String urlString) throws XmlPullParserException, IOException{
         InputStream stream=null;
         XMLParser xmlParser=new XMLParser(this);
@@ -351,6 +369,7 @@ public class MainActivity extends Activity {
 
     }
 
+    //Method to check if the array value from the parsed xml is a double or string
     private void isDouble(String str){
         try{
             Double d = Double.parseDouble(str);

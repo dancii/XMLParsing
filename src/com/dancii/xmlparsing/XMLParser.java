@@ -34,6 +34,7 @@ public class XMLParser {
         this.context=context;
     }
 
+    //A lot of help from http://developer.android.com/training/basics/network-ops/xml.html
     public void parse(InputStream in) throws XmlPullParserException, IOException{
         try{
 
@@ -53,10 +54,11 @@ public class XMLParser {
         String rate=null;
         String txtSaveStr="";
         
+        //Pushes the EUR string and value in the long text string of values
         txtSaveStr+="EUR,1.0,";
         
         
-
+        
         while(parser.next() != XmlPullParser.END_DOCUMENT){
             if(parser.getEventType() != XmlPullParser.START_TAG){
                 continue;
@@ -76,10 +78,13 @@ public class XMLParser {
                 skip(parser);
             }
         }
+        //Adds the date to compare later for update purposes
         txtSaveStr+=dateNow;
+        
         save(txtSaveStr);
     }
 
+    //Skips all the tags that we are not interested in
     private void skip(XmlPullParser parser) throws XmlPullParserException, IOException{
         if(parser.getEventType() != XmlPullParser.START_TAG){
             throw new IllegalStateException();
@@ -97,7 +102,9 @@ public class XMLParser {
             }
         }
     }
-    public void save(String data){
+    
+    //Saves the long string with currency and value in a file
+    private void save(String data){
         try {
         	fileWriter = new FileWriter(new File(context.getFilesDir(),filename));
         	fileWriter.write(data);
