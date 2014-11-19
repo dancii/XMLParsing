@@ -128,23 +128,28 @@ public class MainActivity extends Activity {
     	Date dateFromFile=null;
     	
     	tempArray=readFromFile();
-    	
-    	try {
-			dateFromFile=new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse(tempArray[tempArray.length-1]);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			Log.e("ERROR DATE", e.toString());
-		}catch(Exception e){
-			loadPage();
-		}
-    	
-    	long diffInMilli=dateNow.getTime()-dateFromFile.getTime();
-    	
-    	if(diffInMilli>=Integer.parseInt(myPreferences.getString("prefUpdateInter", "1"))*24*60*60*1000/*In milliseconds*/){
+    	if(tempArray==null){
     		loadPage();
     	}else{
-    		getCurrencyFromSavedFile();
+    		try {
+        		
+    			dateFromFile=new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse(tempArray[tempArray.length-1]);
+    			
+    			long diffInMilli=dateNow.getTime()-dateFromFile.getTime();
+    	    	
+    	    	if(diffInMilli>=Integer.parseInt(myPreferences.getString("prefUpdateInter", "1"))*24*60*60*1000/*In milliseconds*/){
+    	    		loadPage();
+    	    	}else{
+    	    		getCurrencyFromSavedFile();
+    	    	}
+    		}catch(Exception e){
+    			Log.e("ERROR DATE", e.toString());
+    			loadPage();
+    		}
     	}
+    	
+
+    	
     }
     //Button method
     public void getData(View view){
@@ -240,7 +245,7 @@ public class MainActivity extends Activity {
             streamReader.close();
             inputStream.close();
         }catch(FileNotFoundException e1){
-        	Toast.makeText(this, "It seems that you dont have a saved file, try again later", Toast.LENGTH_SHORT).show();
+        	Toast.makeText(this, "It seems that you dont have a saved file, will try to download from the web", Toast.LENGTH_SHORT).show();
         }catch(Exception e2){
         	Toast.makeText(this, "Some problem with reading from the file, try again later", Toast.LENGTH_SHORT).show();
         }
