@@ -62,6 +62,7 @@ public class MainActivity extends Activity {
     Random rand=new Random();
     String[] tempArray=null;
     private int[] backgroundColors=null;
+    private int viewBackgroundColor=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,11 +79,13 @@ public class MainActivity extends Activity {
         
         myPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         
+        viewBackgroundColor=Integer.parseInt(myPreferences.getString("prefChangeBackgroundColor", "4"));
+        changeViewBackgroundColor(viewBackgroundColor);
+        
         if(savedInstanceState != null){
         	txtViewCurrValue.setText(savedInstanceState.getString(STATE_TEXTVIEW_CURR_CALC));
         	backgroundColors=savedInstanceState.getIntArray(STATE_SPINNER_COLOR);
         	getCurrencyFromSavedFile();
-
         }
            
     }
@@ -113,9 +116,11 @@ public class MainActivity extends Activity {
     public void onResume(){
     	super.onResume();
     	
+    	
     	if(downloadXMLTask==null){
     		loadPage();
     	}
+    	
     	
     }
     
@@ -126,6 +131,9 @@ public class MainActivity extends Activity {
     	tempArray=null;
     	Date dateNow=new Date();
     	Date dateFromFile=null;
+    	
+    	viewBackgroundColor=Integer.parseInt(myPreferences.getString("prefChangeBackgroundColor", "4"));
+        changeViewBackgroundColor(viewBackgroundColor);
     	
     	tempArray=readFromFile();
     	if(tempArray==null){
@@ -148,9 +156,26 @@ public class MainActivity extends Activity {
     		}
     	}
     	
-
-    	
     }
+    
+    private void changeViewBackgroundColor(int color){
+    	View view = this.getWindow().getDecorView();
+    	switch(color){
+    	case 1:
+    		view.setBackgroundColor(Color.BLACK);
+    		break;
+    	case 2:
+    		view.setBackgroundColor(Color.BLUE);
+    		break;
+    	case 3:
+    		view.setBackgroundColor(Color.GREEN);
+    		break;
+    	case 4:
+    		view.setBackgroundColor(Color.WHITE);
+    		break;
+    	}
+    }
+    
     //Button method
     public void getData(View view){
     	if(view.getId()!=R.id.btnGetData){
@@ -264,17 +289,15 @@ public class MainActivity extends Activity {
             isDouble(tempArray[i]);
         }
         
+        
         if(backgroundColors==null){
         	backgroundColors=new int[currencyStr.size()];
             for(int i=0;i<currencyStr.size();i++){
             	backgroundColors[i]=Color.argb(255,rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
             }
         }
-        
-
 
 		try{
-
             spinnerOne.setAdapter(new CustomAdapter(this,R.layout.custom_spinner,currencyStr));
             spinnerTwo.setAdapter(new CustomAdapter(this,R.layout.custom_spinner,currencyStr));
             spinnerOne.setOnItemSelectedListener(new SpinnerListener());
@@ -286,9 +309,10 @@ public class MainActivity extends Activity {
     }
     
     public class CustomAdapter extends ArrayAdapter<String>{
-    	
+    	ArrayList<String> currencyList=new ArrayList<String>();
     	public CustomAdapter(Context context, int textViewResourceId, ArrayList<String> data){
     		super(context, textViewResourceId, data);
+    		currencyList=data;
     	}
     	
     	@Override
@@ -306,8 +330,9 @@ public class MainActivity extends Activity {
     		View row = inflater.inflate(R.layout.custom_spinner, parent, false);
     		row.setBackgroundColor(backgroundColors[position]);
     		
+    		
     		TextView txtCurrency = (TextView) row.findViewById(R.id.txtViewCurrency);
-    		txtCurrency.setText(currencyStr.get(position));
+    		txtCurrency.setText(currencyList.get(position));
     		
     		return row;
     	}
@@ -335,9 +360,7 @@ public class MainActivity extends Activity {
             stream = conn.getInputStream();
 
             xmlParser.parse(stream);
-
-            
-            
+    
 
         }catch(Exception e){
         	

@@ -3,11 +3,18 @@
     
     <PreferenceCategory android:title="@string/title_activity_settings">
         <EditTextPreference
-                android:title="@string/UpdateCurrInter"
-                android:summary="Set your update interval(days)"
-                android:key="prefUpdateInter"
-                android:inputType="number"/>
-        
+	        android:title="@string/UpdateCurrInter"
+	        android:summary="Set your update interval(days)"
+	        android:key="prefUpdateInter"
+	        android:inputType="number"/>
+
+        <ListPreference 
+            android:title="@string/changeBackgroundColor"
+            android:summary="Change background color for the view"
+            android:key="prefChangeBackgroundColor"
+            android:entries="@array/stringBackgroundColor"
+            android:entryValues="@array/backgroundColorValues"
+            android:defaultValue="4"/>
     </PreferenceCategory>
 
 </PreferenceScreen>
