@@ -49,6 +49,8 @@ public class MainActivity extends Activity {
     private static final String url="http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
     private static final String STATE_TEXTVIEW_CURR_CALC = "txtViewCurrCalc";
     private static final String STATE_SPINNER_COLOR = "spinnerColor";
+    private static final String STATE_SPINNER1_POS = "spinnerOnePos";
+    private static final String STATE_SPINNER2_POS = "spinnerTwoPos";
     private ArrayList<String> currencyStr=new ArrayList<String>();
     private ArrayList<Double> rateDouble=null;
     private Spinner spinnerOne,spinnerTwo;
@@ -63,6 +65,8 @@ public class MainActivity extends Activity {
     String[] tempArray=null;
     private int[] backgroundColors=null;
     private int viewBackgroundColor=0;
+    private int spinnerOnePos=0;
+    private int spinnerTwoPos=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +89,8 @@ public class MainActivity extends Activity {
         if(savedInstanceState != null){
         	txtViewCurrValue.setText(savedInstanceState.getString(STATE_TEXTVIEW_CURR_CALC));
         	backgroundColors=savedInstanceState.getIntArray(STATE_SPINNER_COLOR);
+        	spinnerOnePos=savedInstanceState.getInt(STATE_SPINNER1_POS);
+        	spinnerTwoPos=savedInstanceState.getInt(STATE_SPINNER2_POS);
         	getCurrencyFromSavedFile();
         }
            
@@ -96,6 +102,8 @@ public class MainActivity extends Activity {
     	savedInstanceState.putString(STATE_TEXTVIEW_CURR_CALC, txtViewCurrValue.getText().toString());
     	
     	savedInstanceState.putIntArray(STATE_SPINNER_COLOR, backgroundColors);
+    	savedInstanceState.putInt(STATE_SPINNER1_POS, spinnerOne.getSelectedItemPosition());
+    	savedInstanceState.putInt(STATE_SPINNER2_POS, spinnerTwo.getSelectedItemPosition());
     	super.onSaveInstanceState(savedInstanceState);
     }
     
@@ -302,6 +310,8 @@ public class MainActivity extends Activity {
             spinnerTwo.setAdapter(new CustomAdapter(this,R.layout.custom_spinner,currencyStr));
             spinnerOne.setOnItemSelectedListener(new SpinnerListener());
             spinnerTwo.setOnItemSelectedListener(new SpinnerListener());
+            spinnerOne.setSelection(spinnerOnePos);
+            spinnerTwo.setSelection(spinnerTwoPos);
             
         }catch(Exception e){
         	System.out.println("SPINNER ERROR: "+e);
